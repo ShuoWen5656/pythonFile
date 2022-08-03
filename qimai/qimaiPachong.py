@@ -34,6 +34,27 @@ def get_headers():
     return header
 
 
+
+proxyArr = ["222.92.207.98:40080", "194.169.167.5:8080"]
+# 代理
+proxies = {
+    "http": "",
+    "https": ""
+}
+# 获取代理
+def getProxy():
+    index = int(random.random() * len(proxyArr))
+    while proxyArr[index] == proxies["https"]:
+        index = int(random.random() * len(proxyArr))
+    proxies["https"] = proxyArr[index]
+    proxies["http"] = proxyArr[index]
+
+
+
+
+# 测试代理ip是否生效
+testProxyUrl = "https://httpbin.org/ip"
+
 # 查询appInfourl
 appInfoUrl = "https://api.qimai.cn/andapp/info?{}"
 appInfoContext = "/andapp/info"
@@ -54,6 +75,7 @@ paramsForStatus = {
 
 
 
+
 def getAppInfoFromAppIdAndMarket(appId, market):
     paramsForStatus["appid"] = appId
     paramsForStatus["market"] = market
@@ -62,7 +84,10 @@ def getAppInfoFromAppIdAndMarket(appId, market):
         return ""
     url = appInfoUrl.format(parse.urlencode(paramsForStatus)) + "&analysis=" + a
     print(url)
-    res = requests.get(url, headers=get_headers())
+    getProxy()
+    rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
+    print("当前代理ip:", json.loads(rsp.text))
+    res = requests.get(url, headers=get_headers(), proxies = proxies)
     rsp = json.loads(res.text)
     if rsp["appInfo"] == None or rsp["appInfo"] == "":
         return ""
@@ -77,15 +102,23 @@ def getAppIdFromBundle(bundleId, market):
     url = bundleId2id.format(parse.urlencode(paramsForId)) + "&analysis=" + a
     # url = "https://www.qimai.cn/"
     print(url)
-    res = requests.get(url, headers=get_headers())
+    getProxy()
+    # 检验
+    rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
+    print("当前代理ip:", json.loads(rsp.text))
+    res = requests.get(url, headers=get_headers(), proxies = proxies)
     rsp = json.loads(res.text)
     return rsp["app_id"]
 
 def getStatusByBundleAndMarket(bundleId, market):
+    time.sleep(10 + 10 * random.random())
     appId = getAppIdFromBundle(bundleId, market)
+    time.sleep(10 + 10 * random.random())
     if appId == "" or appId == None:
         return 0
+    time.sleep(10 + 10 * random.random())
     status = getAppInfoFromAppIdAndMarket(appId, market)
+    time.sleep(10 + 10 * random.random())
     return status
 
 # 0000000c735d856
@@ -100,13 +133,6 @@ def encrypt(a: str, n="0000000c735d856"):
     return html.unescape("".join(s))
 
 
-# def iFunc(e:str):
-#     t = ""
-#     arr = ["66", "72", "6f", "6d", "43", "68", "61", "72", "43", "6f", "64", "65"]
-#     for s in arr:
-#         t += html.unescape("%u00" + s)
-#     a = t
-#     return chr(e)
 
 # 获取反爬虫加密信息
 def getAnalysis(params, context):
@@ -135,7 +161,7 @@ def main():
     data = json.loads(s)
     appid = data["app_id"]
 if __name__ == '__main__':
-    workbookr = xlrd.open_workbook(r'C:\Users\赵烁文\PycharmProjects\untitled\resource\resourceData.xls')
+    workbookr = xlrd.open_workbook(r'..\resource\resourceData.xls')
     sheet = workbookr.sheet_by_index(1)
     workbookw = xlwt.Workbook(encoding="utf-8")
     sheetw = workbookw.add_sheet("result", cell_overwrite_ok=True)
@@ -159,9 +185,7 @@ if __name__ == '__main__':
                 statusXunfei = 1
                 sheetw.write(i, 2, statusHuawei)
                 sheetw.write(i, 5, statusXunfei)
-                time.sleep(3 + 2 * random.random())
                 continue
-            time.sleep(3 + 2 * random.random())
 
             statusVivo = getStatusByBundleAndMarket(bundleId, 8)
             print("statusVivo:" + str(statusVivo))
@@ -169,9 +193,7 @@ if __name__ == '__main__':
                 statusXunfei = 1
                 sheetw.write(i, 2, statusVivo)
                 sheetw.write(i, 5, statusXunfei)
-                time.sleep(3 + 2 * random.random())
                 continue
-            time.sleep(3 + 2 * random.random())
 
             statusYinyongBao = getStatusByBundleAndMarket(bundleId, 3)
             print("statusYinyongBao:" + str(statusYinyongBao))
@@ -179,9 +201,7 @@ if __name__ == '__main__':
                 statusXunfei = 1
                 sheetw.write(i, 2, statusVivo)
                 sheetw.write(i, 5, statusXunfei)
-                time.sleep(3 + 2 * random.random())
                 continue
-            time.sleep(3 + 2 * random.random())
 
             # 到这里说明都是0
             # 写入excel
@@ -198,8 +218,10 @@ if __name__ == '__main__':
             sheetw.write(i, 3, "error")
             sheetw.write(i, 4, "error")
             sheetw.write(i, 5, "error")
+            # 异常一定save一下
+            workbookw.save(r'..\resource\resourceData1.xls')
             continue
-    workbookw.save(r'C:\Users\赵烁文\PycharmProjects\untitled\resource\resourceData1.xls')
+    workbookw.save(r'..\resource\resourceData1.xls')
 
     # print(chr(14))
     # getAppInfoFromAppIdAndMarket(7522305, 8)
