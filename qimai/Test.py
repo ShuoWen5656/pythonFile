@@ -15,7 +15,7 @@ import html
 import random
 from threading import Thread,Lock,Semaphore
 from bs4 import BeautifulSoup
-
+from qimai import GlobalPost
 
 semaphore = Semaphore(1)
 
@@ -33,7 +33,6 @@ proxies = {
 
 # 获取一个可用的ip地址
 def getOneAvailableProxyIP():
-    global availableIP
     for i in  range(1, 8):
         try:
             req = requests.get("http://www.ip3366.net/free/?stype=1&page=" + str(i), timeout=5)
@@ -51,15 +50,18 @@ def getOneAvailableProxyIP():
                     rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
                     print("wa!!!!!!!,找到一个！:",json.loads(rsp.text))
                     # print(tag.findAll('td')[1].text)
-                    semaphore.acquire()
-                    availableIP = ipport
-                    semaphore.release()
-                    return
+                    GlobalPost.append(ipport)
+                    print("#####当前ip可用列表：############3")
+                    GlobalPost.printList()
+                    print("###############################3")
                 except:
-                    print("不可用ip：", ipport)
+                    print("不可用ip：", ipport + "   " , end="")
                     continue
         except:
             continue
+        finally:
+            if i == 8:
+                i = 1
 
 # get89VIP
 def get89Vip():
@@ -81,18 +83,20 @@ def get89Vip():
                     rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
                     print("wa!!!!!!!,找到一个！:",json.loads(rsp.text))
                     # print(tag.findAll('td')[1].text)
-                    semaphore.acquire()
-                    availableIP = ipport
-                    semaphore.release()
-                    return
+                    GlobalPost.append(ipport)
+                    print("#####当前ip可用列表：############3")
+                    GlobalPost.printList()
+                    print("###############################3")
                 except:
-                    print("不可用ip：", ipport)
+                    print("不可用ip：", ipport + "   ", end="")
                     continue
         except:
             continue
+        finally:
+            if  i == 7:
+                i = 1
 
 def getKuaidaili():
-    global availableIP
     for i in  range(1, 4705):
         try:
             req = requests.get("https://free.kuaidaili.com/free/inha/"+ str(i) +"/", timeout=5)
@@ -102,24 +106,25 @@ def getKuaidaili():
             iplist = soup.select('#list tbody tr')
             for tag in iplist:
                 try:
-                    if availableIP != "":
-                        return
                     if  tag.findAll('td')[2].text == "HTTPS":
                         ipport = tag.findAll('td')[0].text+":"+tag.findAll('td')[1]
                         print(ipport)
                         proxies["https"] = ipport
                         rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
                         print("wa!!!!!!!,找到一个！:", json.loads(rsp.text))
-                        semaphore.acquire()
-                        availableIP = ipport
-                        semaphore.release()
-                        return
+                        GlobalPost.append(ipport)
+                        print("#####当前ip可用列表：############3")
+                        GlobalPost.printList()
+                        print("###############################3")
                     # print(tag.findAll('td')[1].text)
                 except:
-                    print("不可用ip：", ipport)
+                    print("不可用ip：", ipport + "   ", end="")
                     continue
         except:
             continue
+        finally:
+            if  i == 20:
+                i = 1
 
 def getkxdaili():
     global availableIP
@@ -139,36 +144,39 @@ def getkxdaili():
                     proxies["https"] = ipport
                     rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
                     print("wa!!!!!!!,找到一个！:", json.loads(rsp.text))
-                    semaphore.acquire()
-                    availableIP = ipport
-                    semaphore.release()
-                    return
+                    GlobalPost.append(ipport)
+                    print("#####当前ip可用列表：############3")
+                    GlobalPost.printList()
+                    print("###############################3")
                     # print(tag.findAll('td')[1].text)
                 except:
-                    print("不可用ip：", ipport)
+                    print("不可用ip：", ipport + "   ", end="")
                     continue
         except:
             continue
+        finally:
+            if  i == 20:
+                i = 1
 
 def getAvailableIP():
-    global availableIP
+    # global availableIP
     # 每次获取之前清空
-    availableIP = ""
-    # t4 = Thread(target=getKuaidaili)
-    # t3 = Thread(target=get89Vip)
-    # t1 = Thread(target=getkxdaili)
-    # t2 = Thread(target=getOneAvailableProxyIP)
-    # t1.start()
-    # t2.start()
-    # t3.start()
-    # t4.start()
+    # availableIP = ""
+    t4 = Thread(target=getKuaidaili)
+    t3 = Thread(target=get89Vip)
+    t1 = Thread(target=getkxdaili)
+    t2 = Thread(target=getOneAvailableProxyIP)
+    t1.start()
+    t2.start()
+    t3.start()
+    t4.start()
+    # t1.join()
+    # t2.join()
+    # t3.join()
+    # t4.join()
     # while availableIP == "":
     #     None
-
-
-
-
-    availableIP = getOneAvailableProxyIP()
+    # availableIP = getOneAvailableProxyIP()
     return availableIP
 
 

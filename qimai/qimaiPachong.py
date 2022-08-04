@@ -13,6 +13,8 @@ import html
 import random
 from qimai import Test
 import collections
+from qimai import GlobalPost
+
 # ##########################请求相关###################
 # 防止被反爬虫,各种headers
 def get_headers():
@@ -36,29 +38,26 @@ def get_headers():
 
 
 
-proxyArr = collections.deque
+
 # 代理
 proxies = {
     "http": "",
     "https": ""
 }
+
+
 # 获取代理
 def getProxy():
-    while len(proxyArr) == 0:
+    while GlobalPost.size() == 0:
         None
-    # 获取一个
-    ip = proxyArr.pop()
-    # 检查可用性
-
-
+    # 随机获取
+    ip = GlobalPost.get(int(random.random() * GlobalPost.size()))
     # index = int(random.random() * len(proxyArr))
     while ip != "" and ip == proxies["https"]:
-        ip = Test.getAvailableIP()
+        ip = GlobalPost.get(int(random.random() * GlobalPost.size()))
         # index = int(random.random() * len(proxyArr))
     proxies["https"] = ip
     proxies["http"] = ip
-
-
 
 
 # 测试代理ip是否生效
@@ -83,6 +82,22 @@ paramsForStatus = {
 }
 
 
+def checkIP():
+    try:
+        # 当前可用ip列表
+        print("#####当前ip可用列表：############3")
+        GlobalPost.printList()
+        print("###############################3")
+        rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
+        print("当前代理ip:", json.loads(rsp.text))
+        return True
+    except:
+        print("代理ip异常：", rsp.text)
+        # 删除
+        GlobalPost.remove(proxies["https"])
+        return False
+
+
 
 
 def getAppInfoFromAppIdAndMarket(appId, market):
@@ -93,18 +108,17 @@ def getAppInfoFromAppIdAndMarket(appId, market):
         return ""
     url = appInfoUrl.format(parse.urlencode(paramsForStatus)) + "&analysis=" + a
     print(url)
-    try:
-        rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
-    except:
-        print("代理ip异常：", rsp.text)
-        return
-    finally:
-        print("当前代理ip:", json.loads(rsp.text))
-    res = requests.get(url, headers=get_headers(), proxies = proxies)
+    res = requests.get(url, headers=get_headers(), proxies=proxies)
     rsp = json.loads(res.text)
+    if rsp['code'] == 10605:
+        GlobalPost.remove(proxies["https"])
+        print("#####ip已被封禁，七麦你大爷的，删除："+ proxies["https"] +"当前ip可用列表：############3")
+        GlobalPost.printList()
+        print("###############################3")
     if rsp["appInfo"] == None or rsp["appInfo"] == "":
         return ""
     return rsp["appInfo"]["is_online"]
+
 
 def getAppIdFromBundle(bundleId, market):
     paramsForId["market"] = market
@@ -116,25 +130,27 @@ def getAppIdFromBundle(bundleId, market):
     # url = "https://www.qimai.cn/"
     print(url)
     # 检验
-    try:
-        rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
-    except:
-        print("代理ip异常：", rsp.text)
-        return
-    finally:
-        print("当前代理可用ip:", json.loads(rsp.text))
-    res = requests.get(url, headers=get_headers(), proxies = proxies)
+    res = requests.get(url, headers=get_headers(), proxies=proxies)
     rsp = json.loads(res.text)
+    if rsp['code'] == 10605:
+        GlobalPost.remove(proxies["https"])
+        print("#####ip已被封禁，七麦你大爷的,删除："+ proxies["https"] +"当前ip可用列表：############3")
+        GlobalPost.printList()
+        print("###############################3")
     return rsp["app_id"]
+
 
 def getStatusByBundleAndMarket(bundleId, market):
     getProxy()
+    while checkIP() == False:
+        getProxy()
     appId = getAppIdFromBundle(bundleId, market)
     if appId == "" or appId == None:
         return 0
     status = getAppInfoFromAppIdAndMarket(appId, market)
     time.sleep(5 + 10 * random.random())
     return status
+
 
 # 0000000c735d856
 
@@ -146,7 +162,6 @@ def encrypt(a: str, n="0000000c735d856"):
     for i in range(0, sl):
         s[i] = chr(ord(s[i]) ^ ord(n[(i + 10) % nl]))
     return html.unescape("".join(s))
-
 
 
 # 获取反爬虫加密信息
@@ -175,7 +190,12 @@ def main():
     s = "{'code': 10000, 'msg': '成功', 'is_logout': 0, 'app_id': '6070976'}"
     data = json.loads(s)
     appid = data["app_id"]
+
+
+
 if __name__ == '__main__':
+    # 初始化双端队列
+    GlobalPost.initDq()
     workbookr = xlrd.open_workbook(r'../resource/resourceData.xls')
     sheet = workbookr.sheet_by_index(1)
     workbookw = xlwt.Workbook(encoding="utf-8")
@@ -186,14 +206,22 @@ if __name__ == '__main__':
     # 可用的代理ip放入队列
     Test.getAvailableIP()
 
+    for i in range(1, sheet.nrows):
+        # 打印当前进度
+        num = int((i/sheet.nrows) * 100)
+        print("当前进度：[", end="")
+        for j in range(0,100):
+            if j < num:
+                print("#", end="")
+            else:
+                print(" ", end="")
+        print("]")
 
-
-    for i in  range(1, sheet.nrows):
         try:
 
-            print("查询"+sheet.row_values(i)[0])
+            print("查询" + sheet.row_values(i)[0])
             bundleId = sheet.row_values(i)[0]
-            appName =  sheet.row_values(i)[1]
+            appName = sheet.row_values(i)[1]
             sheetw.write(i, 0, bundleId)
             sheetw.write(i, 1, appName)
             # 三种market查询
@@ -237,6 +265,8 @@ if __name__ == '__main__':
             sheetw.write(i, 3, "error")
             sheetw.write(i, 4, "error")
             sheetw.write(i, 5, "error")
+            # 删除当前代理,可能是被封了已经
+            GlobalPost.remove(proxies["https"])
             # 异常一定save一下
             workbookw.save(r'../resource/resourceData1.xls')
             continue
