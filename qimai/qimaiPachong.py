@@ -9,9 +9,10 @@ import random
 import string
 import time
 import html
-from xlutils.copy import copy
+# from xlutils.copy import copy
 import random
-
+from qimai import Test
+import collections
 # ##########################请求相关###################
 # 防止被反爬虫,各种headers
 def get_headers():
@@ -35,7 +36,7 @@ def get_headers():
 
 
 
-proxyArr = ["222.92.207.98:40080", "194.169.167.5:8080"]
+proxyArr = collections.deque
 # 代理
 proxies = {
     "http": "",
@@ -43,11 +44,19 @@ proxies = {
 }
 # 获取代理
 def getProxy():
-    index = int(random.random() * len(proxyArr))
-    while proxyArr[index] == proxies["https"]:
-        index = int(random.random() * len(proxyArr))
-    proxies["https"] = proxyArr[index]
-    proxies["http"] = proxyArr[index]
+    while len(proxyArr) == 0:
+        None
+    # 获取一个
+    ip = proxyArr.pop()
+    # 检查可用性
+
+
+    # index = int(random.random() * len(proxyArr))
+    while ip != "" and ip == proxies["https"]:
+        ip = Test.getAvailableIP()
+        # index = int(random.random() * len(proxyArr))
+    proxies["https"] = ip
+    proxies["http"] = ip
 
 
 
@@ -84,9 +93,13 @@ def getAppInfoFromAppIdAndMarket(appId, market):
         return ""
     url = appInfoUrl.format(parse.urlencode(paramsForStatus)) + "&analysis=" + a
     print(url)
-    getProxy()
-    rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
-    print("当前代理ip:", json.loads(rsp.text))
+    try:
+        rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
+    except:
+        print("代理ip异常：", rsp.text)
+        return
+    finally:
+        print("当前代理ip:", json.loads(rsp.text))
     res = requests.get(url, headers=get_headers(), proxies = proxies)
     rsp = json.loads(res.text)
     if rsp["appInfo"] == None or rsp["appInfo"] == "":
@@ -102,23 +115,25 @@ def getAppIdFromBundle(bundleId, market):
     url = bundleId2id.format(parse.urlencode(paramsForId)) + "&analysis=" + a
     # url = "https://www.qimai.cn/"
     print(url)
-    getProxy()
     # 检验
-    rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
-    print("当前代理ip:", json.loads(rsp.text))
+    try:
+        rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
+    except:
+        print("代理ip异常：", rsp.text)
+        return
+    finally:
+        print("当前代理可用ip:", json.loads(rsp.text))
     res = requests.get(url, headers=get_headers(), proxies = proxies)
     rsp = json.loads(res.text)
     return rsp["app_id"]
 
 def getStatusByBundleAndMarket(bundleId, market):
-    time.sleep(10 + 10 * random.random())
+    getProxy()
     appId = getAppIdFromBundle(bundleId, market)
-    time.sleep(10 + 10 * random.random())
     if appId == "" or appId == None:
         return 0
-    time.sleep(10 + 10 * random.random())
     status = getAppInfoFromAppIdAndMarket(appId, market)
-    time.sleep(10 + 10 * random.random())
+    time.sleep(5 + 10 * random.random())
     return status
 
 # 0000000c735d856
@@ -161,13 +176,17 @@ def main():
     data = json.loads(s)
     appid = data["app_id"]
 if __name__ == '__main__':
-    workbookr = xlrd.open_workbook(r'..\resource\resourceData.xls')
+    workbookr = xlrd.open_workbook(r'../resource/resourceData.xls')
     sheet = workbookr.sheet_by_index(1)
     workbookw = xlwt.Workbook(encoding="utf-8")
     sheetw = workbookw.add_sheet("result", cell_overwrite_ok=True)
     # sheetw.write(0,0,"123")
 
     print(sheet.nrows)
+    # 可用的代理ip放入队列
+    Test.getAvailableIP()
+
+
 
     for i in  range(1, sheet.nrows):
         try:
@@ -219,9 +238,9 @@ if __name__ == '__main__':
             sheetw.write(i, 4, "error")
             sheetw.write(i, 5, "error")
             # 异常一定save一下
-            workbookw.save(r'..\resource\resourceData1.xls')
+            workbookw.save(r'../resource/resourceData1.xls')
             continue
-    workbookw.save(r'..\resource\resourceData1.xls')
+    workbookw.save(r'../resource/resourceData1.xls')
 
     # print(chr(14))
     # getAppInfoFromAppIdAndMarket(7522305, 8)

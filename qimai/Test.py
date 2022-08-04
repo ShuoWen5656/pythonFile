@@ -11,10 +11,15 @@ import random
 import string
 import time
 import html
-from xlutils.copy import copy
+# from xlutils.copy import copy
 import random
+from threading import Thread,Lock,Semaphore
 from bs4 import BeautifulSoup
 
+
+semaphore = Semaphore(1)
+
+availableIP = ""
 
 testProxyUrl = "http://httpbin.org/ip"
 testProxyUrlHTTPS = "https://httpbin.org/ip"
@@ -28,85 +33,145 @@ proxies = {
 
 # 获取一个可用的ip地址
 def getOneAvailableProxyIP():
-
+    global availableIP
     for i in  range(1, 8):
-        req = requests.get("http://www.ip3366.net/free/?stype=1&page=" + str(i))
-        html = req.text
-        req.encoding = "utf-8"
-        soup = BeautifulSoup(html, features="html.parser")
-        iplist = soup.select('#list tbody tr')
-        for tag in iplist:
-            try:
-                ipport = tag.findAll('td')[0].text+":"+tag.findAll('td')[1].text
-                print(ipport)
-                proxies["https"] = ipport
-                rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
-                print("wa!!!!!!!,找到一个！:",json.loads(rsp.text))
-                # print(tag.findAll('td')[1].text)
-            except:
-                print("不可用ip：", ipport)
-                continue
+        try:
+            req = requests.get("http://www.ip3366.net/free/?stype=1&page=" + str(i), timeout=5)
+            html = req.text
+            req.encoding = "utf-8"
+            soup = BeautifulSoup(html, features="html.parser")
+            iplist = soup.select('#list tbody tr')
+            for tag in iplist:
+                try:
+                    if availableIP != "":
+                        return
+                    ipport = tag.findAll('td')[0].text+":"+tag.findAll('td')[1].text
+                    print(ipport)
+                    proxies["https"] = ipport
+                    rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
+                    print("wa!!!!!!!,找到一个！:",json.loads(rsp.text))
+                    # print(tag.findAll('td')[1].text)
+                    semaphore.acquire()
+                    availableIP = ipport
+                    semaphore.release()
+                    return
+                except:
+                    print("不可用ip：", ipport)
+                    continue
+        except:
+            continue
 
 # get89VIP
 def get89Vip():
+    global availableIP
     for i in  range(1, 7):
-        req = requests.get("https://www.89ip.cn/index_"+ str(i) +".html")
-        html = req.text
-        req.encoding = "utf-8"
-        soup = BeautifulSoup(html, features="html.parser")
-        iplist = soup.select('.layui-table tbody tr')
-        for tag in iplist:
-            try:
-                ipport = tag.findAll('td')[0].text.replace("\t", "").replace("\n", "")+":"+tag.findAll('td')[1].text.replace("\t", "").replace("\n", "")
-                print(ipport)
-                proxies["https"] = ipport
-                rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
-                print("wa!!!!!!!,找到一个！:",json.loads(rsp.text))
-                # print(tag.findAll('td')[1].text)
-            except:
-                print("不可用ip：", ipport)
-                continue
-
+        try:
+            req = requests.get("https://www.89ip.cn/index_"+ str(i) +".html", timeout=5)
+            html = req.text
+            req.encoding = "utf-8"
+            soup = BeautifulSoup(html, features="html.parser")
+            iplist = soup.select('.layui-table tbody tr')
+            for tag in iplist:
+                try:
+                    if availableIP != "":
+                        return
+                    ipport = tag.findAll('td')[0].text.replace("\t", "").replace("\n", "")+":"+tag.findAll('td')[1].text.replace("\t", "").replace("\n", "")
+                    print(ipport)
+                    proxies["https"] = ipport
+                    rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
+                    print("wa!!!!!!!,找到一个！:",json.loads(rsp.text))
+                    # print(tag.findAll('td')[1].text)
+                    semaphore.acquire()
+                    availableIP = ipport
+                    semaphore.release()
+                    return
+                except:
+                    print("不可用ip：", ipport)
+                    continue
+        except:
+            continue
 
 def getKuaidaili():
+    global availableIP
     for i in  range(1, 4705):
-        req = requests.get("https://free.kuaidaili.com/free/inha/"+ str(i) +"/")
-        html = req.text
-        req.encoding = "utf-8"
-        soup = BeautifulSoup(html, features="html.parser")
-        iplist = soup.select('#list tbody tr')
-        for tag in iplist:
-            try:
-                if  tag.findAll('td')[2].text == "HTTPS":
-                    ipport = tag.findAll('td')[0].text+":"+tag.findAll('td')[1]
+        try:
+            req = requests.get("https://free.kuaidaili.com/free/inha/"+ str(i) +"/", timeout=5)
+            html = req.text
+            req.encoding = "utf-8"
+            soup = BeautifulSoup(html, features="html.parser")
+            iplist = soup.select('#list tbody tr')
+            for tag in iplist:
+                try:
+                    if availableIP != "":
+                        return
+                    if  tag.findAll('td')[2].text == "HTTPS":
+                        ipport = tag.findAll('td')[0].text+":"+tag.findAll('td')[1]
+                        print(ipport)
+                        proxies["https"] = ipport
+                        rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
+                        print("wa!!!!!!!,找到一个！:", json.loads(rsp.text))
+                        semaphore.acquire()
+                        availableIP = ipport
+                        semaphore.release()
+                        return
+                    # print(tag.findAll('td')[1].text)
+                except:
+                    print("不可用ip：", ipport)
+                    continue
+        except:
+            continue
+
+def getkxdaili():
+    global availableIP
+    for i in range(1, 4705):
+        try:
+            req = requests.get("http://www.kxdaili.com/dailiip/1/"+str(i)+".html", timeout=5)
+            html = req.text
+            req.encoding = "utf-8"
+            soup = BeautifulSoup(html, features="html.parser")
+            iplist = soup.select('.hot-product-content tbody tr')
+            for tag in iplist:
+                try:
+                    if availableIP != "":
+                        return
+                    ipport = tag.findAll('td')[0].text + ":" + tag.findAll('td')[1].text
                     print(ipport)
                     proxies["https"] = ipport
                     rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
                     print("wa!!!!!!!,找到一个！:", json.loads(rsp.text))
-                # print(tag.findAll('td')[1].text)
-            except:
-                print("不可用ip：", ipport)
-                continue
+                    semaphore.acquire()
+                    availableIP = ipport
+                    semaphore.release()
+                    return
+                    # print(tag.findAll('td')[1].text)
+                except:
+                    print("不可用ip：", ipport)
+                    continue
+        except:
+            continue
+
+def getAvailableIP():
+    global availableIP
+    # 每次获取之前清空
+    availableIP = ""
+    # t4 = Thread(target=getKuaidaili)
+    # t3 = Thread(target=get89Vip)
+    # t1 = Thread(target=getkxdaili)
+    # t2 = Thread(target=getOneAvailableProxyIP)
+    # t1.start()
+    # t2.start()
+    # t3.start()
+    # t4.start()
+    # while availableIP == "":
+    #     None
 
 
-def getkxdaili():
-    for i in range(1, 4705):
-        req = requests.get("http://www.kxdaili.com/dailiip/1/"+str(i)+".html")
-        html = req.text
-        req.encoding = "utf-8"
-        soup = BeautifulSoup(html, features="html.parser")
-        iplist = soup.select('.hot-product-content tbody tr')
-        for tag in iplist:
-            try:
-                ipport = tag.findAll('td')[0].text + ":" + tag.findAll('td')[1].text
-                print(ipport)
-                proxies["https"] = ipport
-                rsp = requests.get(testProxyUrlHTTPS, proxies=proxies, timeout=5)
-                print("wa!!!!!!!,找到一个！:", json.loads(rsp.text))
-                # print(tag.findAll('td')[1].text)
-            except:
-                print("不可用ip：", ipport)
-                continue
+
+
+    availableIP = getOneAvailableProxyIP()
+    return availableIP
+
+
 
 def testip():
     rsp = requests.get(testProxyUrl, proxies=proxies, timeout=5)
@@ -114,9 +179,28 @@ def testip():
 
 
 if __name__ == '__main__':
+    a = getAvailableIP()
+    print(a)
+
+    # t4 = Thread(target=getKuaidaili)
+    # t3 = Thread(target=get89Vip)
+    # t1 = Thread(target=getkxdaili)
+    # t2 = Thread(target=getOneAvailableProxyIP)
+    # t1.start()
+    # t2.start()
+    # t3.start()
+    # t4.start()
+    # t1.join()
+    # t2.join()
+    # t3.join()
+    # t4.join()
     # get89Vip()
     # getOneAvailableProxyIP()
-    getkxdaili()
+    # getkxdaili()
+
+
+
+
     # testip()
     # req = requests.get("http://www.ip3366.net/free/?stype=1&page=2")
     # html = req.text
