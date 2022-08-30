@@ -187,8 +187,7 @@ def testip():
 
 
 if __name__ == '__main__':
-    a = getAvailableIP()
-    print(a)
+    qimaiPachong.getAppIdFromBundle("com.zile.app", 8)
 
     # t4 = Thread(target=getKuaidaili)
     # t3 = Thread(target=get89Vip)

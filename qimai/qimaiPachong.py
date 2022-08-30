@@ -130,7 +130,8 @@ def getAppIdFromBundle(bundleId, market):
     # url = "https://www.qimai.cn/"
     print(url)
     # 检验
-    res = requests.get(url, headers=get_headers(), proxies=proxies)
+    # res = requests.get(url, headers=get_headers(), proxies=proxies)
+    res = requests.get(url, headers=get_headers())
     rsp = json.loads(res.text)
     if rsp['code'] == 10605:
         GlobalPost.remove(proxies["https"])
@@ -155,7 +156,7 @@ def getStatusByBundleAndMarket(bundleId, market):
 # 0000000c735d856
 
 # OZ,加密算法，n可以是两种值
-def encrypt(a: str, n="0000000c735d856"):
+def encrypt(a: str, n="xyz517cda96abcd"):
     s, n = list(a), list(n)
     sl = len(s)
     nl = len(n)
@@ -176,7 +177,7 @@ def getAnalysis(params, context):
     # s += "@#".join([s.decode(), "/search/checkHasBundleId", t, "1"])
     s = s.decode() + "@#" + context
     s = s + "@#" + o
-    s = s + "@#" + str(1)
+    s = s + "@#" + str(3)
     a = parse.quote(base64.b64encode(bytes(encrypt(s), encoding="ascii")))
     return a
     # s = base64.b64encode(bytes(encrypt(s), encoding="ascii"))
